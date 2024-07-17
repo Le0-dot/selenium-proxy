@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "setuptools-protobuf"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,3 +9,10 @@ dynamic = ["version", "dependencies"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools-protobuf]
+protobufs = ["selenium_proxy/messages.proto"]
+mypy = false
+# there are some problems in build system with generation of mypy files
+# to do it manually use:
+# protoc --plugin=protoc-gen-mypy=venv/bin/protoc-gen-mypy --mypy_out=. selenium_proxy/messages.proto
