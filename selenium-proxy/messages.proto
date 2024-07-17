@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+// First message when conneciton is initiated
+message StartSession {
+    string url = 1;
+    Browser browser = 2;
+}
+
+// After starting session, only this message is accepted by server
+message Request {
+    oneof request {
+        OpenPage open_page = 1;
+        Find find = 2;
+    }
+}
+
+// Every request client will be followed by reponse from server
+message Response {
+    oneof response {
+        string result = 1;
+        string error = 2;
+    }
+}
+
+enum Browser {
+    BROWSER_FIREFOX = 0;
+    BROWSER_CHROME = 1;
+}
+
+// Open page with given URL
+message OpenPage {
+    string url = 1;
+}
+
+// Find element on the page by some identifier and return given attribute
+message Find {
+    By by = 1;
+    string value = 2;
+    string attribute = 3;
+}
+
+enum By {
+    BY_TAG = 0;
+    BY_ID = 1;
+    BY_CLASS = 2;
+    BY_CSS = 3;
+    BY_NAME = 4;
+}
