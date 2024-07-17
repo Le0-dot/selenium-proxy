@@ -1,6 +1,10 @@
 .envrc
 venv
 *.egg-info
+build
 
 __pycache__
 .ruff_cache
+
+# Protobuf generated files
+selenium_proxy/messages_pb2.py
