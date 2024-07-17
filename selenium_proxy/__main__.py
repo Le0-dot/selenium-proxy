@@ -1,11 +1,12 @@
-import logging
 from os import getenv
-from typing import Any
+from functools import cache
+from logging import getLogger
+from typing import Any, Callable
 from inspect import getmembers, isfunction
 
-from selenium.webdriver.remote.webdriver import WebDriver
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from selenium.webdriver.remote.webdriver import WebDriver
 
 from . import messages_pb2
 from . import actions
@@ -26,28 +27,33 @@ async def send_proto(ws: WebSocket, message: Any) -> None:
     await ws.send_bytes(data)
 
 
+@cache
+def action_dict() -> dict[str, Callable[[Any, WebDriver, messages_pb2.Response], None]]:
+    return {
+        name: func for name, func in getmembers(actions, isfunction) if name != "start"
+    }
+
+
 def dispatch(request: messages_pb2.Request, driver: WebDriver) -> messages_pb2.Response:
-    logger = logging.getLogger("uvicorn")
+    logger = getLogger("uvicorn")
     logger.info("dispatching a request")
 
-    if not hasattr(dispatch, "action_dict"):
-        dispatch.action_dict = {
-            name: func for name, func in getmembers(actions, isfunction)
-        }
-
     request_type = request.WhichOneof("request")
-    data = getattr(request, request_type)
+    logger.info('request of type "%s"', request_type)
+
     response = messages_pb2.Response()
+    if request_type is None:
+        response.error = "no request data"
+        return response
 
-    logger.info("request of type \"%s\"", request_type)
-
-    dispatch.action_dict[request_type](data, driver, response)
+    data = getattr(request, request_type)
+    action_dict()[request_type](data, driver, response)
     return response
 
 
 @app.websocket("/")
 async def proxy(ws: WebSocket):
-    logger = logging.getLogger("uvicorn")
+    logger = getLogger("uvicorn")
 
     await ws.accept()
     start_session = messages_pb2.StartSession()

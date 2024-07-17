@@ -1,6 +1,6 @@
 import logging
 
-from selenium.webdriver import Firefox, Remote, FirefoxOptions, ChromeOptions
+from selenium.webdriver import Remote, FirefoxOptions, ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
@@ -9,14 +9,13 @@ from . import messages_pb2
 
 
 def start(args: messages_pb2.StartSession) -> WebDriver:
-    match args.browser:
-        case messages_pb2.Browser.BROWSER_FIREFOX:
-            options = FirefoxOptions()
-        case messages_pb2.Browser.BROWSER_CHROME:
-            options = ChromeOptions()
+    browser_options = {
+        messages_pb2.Browser.BROWSER_FIREFOX: FirefoxOptions,
+        messages_pb2.Browser.BROWSER_CHROME: ChromeOptions
+    }
     return Remote(
         command_executor=args.url,
-        options=options,
+        options=browser_options[args.browser](),
     )
 
 
