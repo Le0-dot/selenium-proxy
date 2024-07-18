@@ -1,5 +1,6 @@
 import logging
 
+from urllib3.exceptions import MaxRetryError
 from selenium.webdriver import Remote, FirefoxOptions, ChromeOptions
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -8,15 +9,22 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 from . import messages_pb2
 
 
-def start(args: messages_pb2.StartSession) -> WebDriver:
+def start(
+    args: messages_pb2.StartSession,
+) -> tuple[WebDriver | None, messages_pb2.Response]:
     browser_options = {
         messages_pb2.Browser.BROWSER_FIREFOX: FirefoxOptions,
         messages_pb2.Browser.BROWSER_CHROME: ChromeOptions,
     }
-    return Remote(
-        command_executor=args.url,
-        options=browser_options[args.browser](),
-    )
+    try:
+        return Remote(
+            command_executor=args.url,
+            options=browser_options[args.browser](),
+        ), messages_pb2.Response(result="connected")
+    except MaxRetryError:
+        return None, messages_pb2.Response(
+            error="could not connect to selenium instance"
+        )
 
 
 def open_page(args: messages_pb2.OpenPage, driver: WebDriver) -> messages_pb2.Response:

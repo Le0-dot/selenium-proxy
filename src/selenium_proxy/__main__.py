@@ -56,13 +56,19 @@ async def proxy(ws: WebSocket):
     start_session = messages_pb2.StartSession()
     await receive_proto(ws, start_session)
 
-    with actions.start(start_session) as driver:
+    driver, resp = actions.start(start_session)
+    await send_proto(ws, resp)
+    if driver is None:
+        await ws.close()
+        return
+
+    with driver as session:
         logger.info("started selenium session")
         request = messages_pb2.Request()
         try:
             while True:
                 await receive_proto(ws, request)
-                response = dispatch(request, driver)
+                response = dispatch(request, session)
                 await send_proto(ws, response)
         except WebSocketDisconnect:
             pass
