@@ -7,4 +7,5 @@ __pycache__
 .ruff_cache
 
 # Protobuf generated files
-selenium_proxy/messages_pb2.py
+src/selenium_proxy/messages_pb2.py
+src/selenium_proxy/messages_pb2.pyi
