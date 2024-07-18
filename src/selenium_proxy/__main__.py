@@ -28,7 +28,7 @@ async def send_proto(ws: WebSocket, message: Any) -> None:
 
 
 @cache
-def action_dict() -> dict[str, Callable[[Any, WebDriver, messages_pb2.Response], None]]:
+def action_dict() -> dict[str, Callable[[Any, WebDriver], messages_pb2.Response]]:
     return {
         name: func for name, func in getmembers(actions, isfunction) if name != "start"
     }
@@ -41,14 +41,11 @@ def dispatch(request: messages_pb2.Request, driver: WebDriver) -> messages_pb2.R
     request_type = request.WhichOneof("request")
     logger.info('request of type "%s"', request_type)
 
-    response = messages_pb2.Response()
     if request_type is None:
-        response.error = "no request data"
-        return response
+        return messages_pb2.Response(error="no request data")
 
     data = getattr(request, request_type)
-    action_dict()[request_type](data, driver, response)
-    return response
+    return action_dict()[request_type](data, driver)
 
 
 @app.websocket("/")
